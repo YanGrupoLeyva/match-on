@@ -1,0 +1,41 @@
+name: One-shot quote form
+on:
+  push:
+    paths:
+      - '.github/workflows/add-quote-form.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Add quote form
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'id="presupuesto"' not in s:
+              s=s.replace('<a class="btn btn-primary" href="#planes">Pedir presupuesto</a>','<a class="btn btn-primary" href="#presupuesto">Pedir presupuesto</a>')
+              s=s.replace('<a href="#planes">Pedir presupuesto →</a>','<a href="#presupuesto">Pedir presupuesto →</a>')
+              css='''.quote-panel{padding:34px 34px 36px}.quote-grid{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,.78fr) minmax(560px,1.22fr);gap:36px;align-items:start}.quote-copy{padding:10px 6px}.quote-copy h2{max-width:620px}.quote-copy p{max-width:620px;margin:16px 0 0;color:#b6c8d6;font-size:15px;line-height:1.7}.quote-points{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}.quote-point{padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);color:#d7edf7;font-size:11px;font-weight:700}.quote-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;padding:20px;border:1px solid rgba(255,255,255,.08);border-radius:22px;background:linear-gradient(180deg,rgba(8,22,36,.88),rgba(4,11,18,.96));box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}.field{display:grid;gap:7px}.field.full{grid-column:1/-1}.field label{font-family:Oxanium,sans-serif;font-size:10px;font-weight:800;letter-spacing:.65px;text-transform:uppercase;color:#9fddea}.field input,.field select,.field textarea{width:100%;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:#07131f;color:#edf8ff;font:inherit;font-size:13px;outline:none;padding:12px 13px;transition:.2s}.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(0,229,255,.42);box-shadow:0 0 0 3px rgba(0,229,255,.055)}.field textarea{min-height:92px;resize:vertical}.quote-submit{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:2px}.quote-note{color:#8198a9;font-size:10px;line-height:1.45;max-width:330px}.quote-submit .btn{cursor:pointer;font-family:inherit}.form-feedback{grid-column:1/-1;display:none;padding:10px 12px;border-radius:12px;border:1px solid rgba(0,229,255,.18);background:rgba(0,140,255,.07);color:#bfefff;font-size:12px;line-height:1.45}.form-feedback.show{display:block}\n'''
+              s=s.replace('footer{padding:34px 24px 48px;color:#8195a6;font-size:13px}',css+'footer{padding:34px 24px 48px;color:#8195a6;font-size:13px}')
+              s=s.replace('.schema-card{min-height:auto}.schema-connector-row{display:none}.footer{width:100%}}','.schema-card{min-height:auto}.schema-connector-row{display:none}.quote-panel{padding:22px 18px 22px}.quote-grid{grid-template-columns:1fr;gap:20px}.quote-form{grid-template-columns:1fr;padding:16px}.field.full,.quote-submit{grid-column:1}.footer{width:100%}}')
+              section='''\n  <section class="band" id="presupuesto">\n    <div class="panel quote-panel reveal">\n      <div class="quote-grid">\n        <div class="quote-copy">\n          <span class="section-kicker">Presupuesto rápido</span>\n          <h2>Cuéntanos tu parque.<br>Te ayudamos a conectarlo.</h2>\n          <p>Déjanos los datos básicos de tu operación y podremos orientarte sobre el plan y la implantación que mejor encajan con tu red.</p>\n          <div class="quote-points"><span class="quote-point">Sin compromiso</span><span class="quote-point">Propuesta adaptada</span><span class="quote-point">Para cualquier tamaño de parque</span></div>\n        </div>\n        <form class="quote-form" id="quoteForm">\n          <div class="field"><label for="empresa">Empresa</label><input id="empresa" name="empresa" type="text" placeholder="Nombre de la empresa" required></div>\n          <div class="field"><label for="nombre">Nombre</label><input id="nombre" name="nombre" type="text" placeholder="Persona de contacto" required></div>\n          <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" placeholder="tu@empresa.com" required></div>\n          <div class="field"><label for="telefono">Teléfono</label><input id="telefono" name="telefono" type="tel" placeholder="+34 ..."></div>\n          <div class="field"><label for="maquinas">Nº de máquinas</label><input id="maquinas" name="maquinas" type="number" min="1" placeholder="Ej. 75" required></div>\n          <div class="field"><label for="plan">Plan orientativo</label><select id="plan" name="plan"><option value="">No lo sé todavía</option><option>START · hasta 25</option><option>SCALE · hasta 100</option><option>NETWORK · hasta 500</option><option>ENTERPRISE · +500</option></select></div>\n          <div class="field full"><label for="mensaje">¿Qué necesitas conectar?</label><textarea id="mensaje" name="mensaje" placeholder="Futbolines, dianas, billares, sedes, recaudación, competición..."></textarea></div>\n          <div class="form-feedback" id="formFeedback">Formulario listo. Solo falta conectar el correo o CRM receptor para activar el envío automático.</div>\n          <div class="quote-submit"><span class="quote-note">Tus datos se utilizarán únicamente para preparar y responder tu solicitud.</span><button class="btn btn-primary" type="submit">Solicitar presupuesto</button></div>\n        </form>\n      </div>\n    </div>\n  </section>\n'''
+              s=s.replace('</main>',section+'</main>')
+              old="document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));"
+              new="""document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));\nconst quoteForm=document.getElementById('quoteForm');\nif(quoteForm){quoteForm.addEventListener('submit',e=>{e.preventDefault();document.getElementById('formFeedback').classList.add('show')})}\ndocument.querySelectorAll('.plan-action a[href=\"#presupuesto\"]').forEach(link=>link.addEventListener('click',()=>{const card=link.closest('.plan-card');const name=card?.querySelector('.plan-name')?.textContent?.trim();const plan=document.getElementById('plan');if(name&&plan){const match=[...plan.options].find(o=>o.textContent.startsWith(name));if(match) plan.value=match.value||match.textContent}}));"""
+              s=s.replace(old,new)
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes and remove one-shot workflow
+        run: |
+          git config user.name "YanGrupoLeyva"
+          git config user.email "97878905+YanGrupoLeyva@users.noreply.github.com"
+          git rm .github/workflows/add-quote-form.yml
+          git add index.html
+          git commit -m "Añade formulario rápido de presupuesto"
+          git push origin main
